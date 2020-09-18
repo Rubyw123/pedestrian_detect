@@ -28,5 +28,5 @@ README file in the darknet repository.
   directory.
 
 If `python` is not pointing to a python (>=3.0), you may get `ImportError: No module named 'queue'`. Modify runAll.py
-and change `python` to `python3`
+and change `PYTHON = python` to `PYTHON = python3`
 
