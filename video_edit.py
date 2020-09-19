@@ -11,10 +11,10 @@ TIME_FROMAT = '%H:%M:%S'
 
 def args():
     args = argparse.ArgumentParser(description="Args for video clips editor")
-    args.add_argument("--inputfolder", type=str, default="./videos/5.avi")
-    args.add_argument("--outputfolder", type=str, default="./Output")
-    args.add_argument("--duration",type=str,default="00:00:05")
-    args.add_argument("--start_time_txt", type=str,default="./Detected/timestamp.txt")
+    args.add_argument("--inputfolder", type=str, default="")
+    args.add_argument("--outputfolder", type=str, default="")
+    args.add_argument("--duration",type=str,default="00:02:00")
+    args.add_argument("--start_time_txt", type=str,default="./timestamp.txt")
     return args.parse_args()
 
 def check_arguments_errors(args):
@@ -46,6 +46,7 @@ def readfile(filepath):
     lines = file.readlines()
     for i in lines:
         l.append(i.strip('\n'))
+    file.close()
     return l
 
 def timelist(time):

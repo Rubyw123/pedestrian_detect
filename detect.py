@@ -98,6 +98,7 @@ def get_clips_time(time_list, clip_t):
 
         lis.append(time_list[0])
         i = 0
+        j = 0
         while i < len(time_list):
             for j in range((i+1),len(time_list)):
                 former_time = datetime.strptime(time_list[i], '%H:%M:%S')
@@ -109,7 +110,8 @@ def get_clips_time(time_list, clip_t):
                     break
             if j == len(time_list)-1:
                 break
-    numpy.savetxt("./Detected/timestamp.txt",lis,fmt='%s')
+    
+    numpy.savetxt("./timestamp.txt",lis,fmt='%s')
 
 
 
@@ -216,8 +218,6 @@ if __name__ == '__main__':
     input_path = str2int(args.input)
     cap = cv2.VideoCapture(input_path)
     clip_t = args.clip_time
-    global stop_threads
-
   
     threads.append(Thread(target=video_capture, args=(frame_queue, darknet_image_queue,time_queue, pedestrain_frame)))
     threads.append(Thread(target=inference, args=(darknet_image_queue, detections_queue, fps_queue, detect_people_queue, time_queue, time_list, pedestrain_frame)))
