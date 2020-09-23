@@ -28,7 +28,7 @@ def parser():
                         help="path to config file")
     parser.add_argument("--data_file", default="./cfg/coco.data",
                         help="path to data file")
-    parser.add_argument("--thresh", type=float, default=.80,
+    parser.add_argument("--thresh", type=float, default=.90,
                         help="remove detections with confidence below this value")
     parser.add_argument("--clip_time",type=int,default="120")
     return parser.parse_args()
