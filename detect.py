@@ -169,12 +169,9 @@ def drawing(frame_queue, detections_queue, fps_queue, detect_people_queue):
     video = set_saved_video(cap, args.out_filename, (width, height))
     while cap.isOpened():
         frame_resized = frame_queue.get(block = True, timeout = 4)
-        if not detections_queue.empty():
-            detections = detections_queue.get(block = True, timeout = 4)
-        if not fps_queue.empty():
-            fps = fps_queue.get(block = True, timeout = 4)
-        if not detect_people_queue.empty():
-            detect_people = detect_people_queue.get(block = True, timeout = 4)
+        detections = detections_queue.get(block = True, timeout = 4)
+        fps = fps_queue.get(block = True, timeout = 4)
+        detect_people = detect_people_queue.get(block = True, timeout = 4)
         if frame_resized is not None:
             #image = darknet.draw_boxes(detections, frame_resized, class_colors)
             #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
