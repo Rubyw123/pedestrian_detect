@@ -149,12 +149,12 @@ def inference(darknet_image_queue, detections_queue, fps_queue, detect_people_qu
         detections_queue.put(detections, timeout = 4)
 
         detect_people = darknet.find_people(detections)
-        if(len(detect_people)):
-            for label, confidence, bbox, timestamp in detect_people:
-                pedestrain_frame.put(timestamp+clip_t*1000)
-                time_list.append(timestamp)
-                detect.append((label,confidence,bbox))
-            detect_people_queue.put(detect, timeout =4)
+      
+        for label, confidence, bbox, timestamp in detect_people:
+            pedestrain_frame.put(timestamp+clip_t*1000)
+            time_list.append(timestamp)
+            detect.append((label,confidence,bbox))
+        detect_people_queue.put(detect, timeout =4)
 
 
         fps = int(1/(time.time() - prev_time))
@@ -216,14 +216,17 @@ if __name__ == '__main__':
     darknet_image = darknet.make_image(width, height, 3)
     input_path = str2int(args.input)
     cap = cv2.VideoCapture(input_path)
-    clip_t = args.clip_time
-  
+    clip_t = args.clip_time  
+
     threads.append(Thread(target=video_capture, args=(frame_queue, darknet_image_queue,time_queue, pedestrain_frame)))
     threads.append(Thread(target=inference, args=(darknet_image_queue, detections_queue, fps_queue, detect_people_queue, time_queue, time_list, pedestrain_frame)))
     threads.append(Thread(target=drawing, args=(frame_queue, detections_queue, fps_queue, detect_people_queue)))
-
+    
     for i in threads:
-        i.start()
+        try:
+            i.start()
+        except:
+            pass
     for i in threads:
         i.join()
         print(i.name+" has finished!")
