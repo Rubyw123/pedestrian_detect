@@ -22,7 +22,7 @@ README file in the darknet repository.
 
 #### How to use the pedestrians detection
 1. Clone this repository to local.
-2. Copy four python files to the darknet directory, remember to replace the orginal darkne.py file.
+2. Copy four python files to the darknet directory, remember to replace the orginal darknet.py file.
 3. Creat an input folder and an output folder
 4. Do `python runAll.py --data_path <your input folder path> --save_path <your output folder path>` in the darknet
   directory.
