@@ -26,7 +26,7 @@ def check_arguments_errors(args):
         raise(ValueError("Invalid start_time_txt path {}".format(os.path.abspath(args.start_time_txt))))
 
 def do_cut(file_input, file_output, s1_time, duration):
-    cmd = 'ffmpeg -ss '+s1_time+' -t '+str(duration)+' -accurate_seek -i '+ file_input+' -codec copy '+file_output
+    cmd = 'ffmpeg -fflags +genpts -accurate_seek -i '+ file_input+ ' -ss '+s1_time+' -t '+str(duration)+' -codec copy '+file_output
     print ("cmd=", cmd)
     subprocess.call(cmd, shell=True)
 
