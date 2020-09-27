@@ -181,6 +181,7 @@ def detect_image(network, class_names, image, time, thresh=.5, hier_thresh=.5, n
     if nms:
         do_nms_sort(detections, num, len(class_names), nms)
     predictions = remove_negatives(detections, class_names, num, time)
+    predictions = find_people(predictions)
     predictions = decode_detection(predictions)
     free_detections(detections, num)
     return sorted(predictions, key=lambda x: x[1])
