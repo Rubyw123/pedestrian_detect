@@ -118,73 +118,81 @@ def get_clips_time(time_list, clip_t):
 def video_capture(frame_queue, darknet_image_queue,time_queue,pedestrain_frame):
     while cap.isOpened():
         if not pedestrain_frame.empty():
-            pedestrain_time = pedestrain_frame.get()
+            pedestrain_time = pedestrain_frame.get(False)
             cap.set(cv2.CAP_PROP_POS_MSEC, pedestrain_time)
     
         ret, frame = cap.read()
         if not ret:
             break
         timestamp =cap.get(cv2.CAP_PROP_POS_MSEC)
-        time_queue.put(timestamp)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_resized = cv2.resize(frame_rgb, (width, height),
                                    interpolation=cv2.INTER_LINEAR)
         frame_queue.put(frame_resized)
         darknet.copy_image_from_bytes(darknet_image, frame_resized.tobytes())
         darknet_image_queue.put(darknet_image)
+        time_queue.put(timestamp)
+
+        
+    
     cap.release()
 
 
 
 
 
-def inference(darknet_image_queue, detections_queue, fps_queue, detect_people_queue, time_queue, time_list,pedestrain_frame):
+def inference(darknet_image_queue, detections_queue, fps_queue, time_queue, time_list,pedestrain_frame):
     while cap.isOpened():
         detect = []
-        darknet_image = darknet_image_queue.get(block = True, timeout = 4)
-        timestamp = time_queue.get(block = True, timeout = 4)
+        if (not darknet_image_queue.empty()) and (not time_queue.empty()):
+            darknet_image = darknet_image_queue.get(False)
+            timestamp = time_queue.get(False)
 
-        prev_time = time.time()
-        detections = darknet.detect_image(network, class_names, darknet_image, timestamp, thresh=args.thresh)
-        detections_queue.put(detections, timeout = 4)
+            prev_time = time.time()
+            if (darknet_image is not None) and (timestamp is not None):
+                detections = darknet.detect_image(network, class_names, darknet_image, timestamp, thresh=args.thresh)
 
-        detect_people = darknet.find_people(detections)
-      
-        for label, confidence, bbox, timestamp in detect_people:
-            pedestrain_frame.put(timestamp+clip_t*1000)
-            time_list.append(timestamp)
-            detect.append((label,confidence,bbox))
-        detect_people_queue.put(detect, timeout =4)
+            """
+            for label, confidence, bbox, timestamp in detect_people:
+                pedestrain_frame.put(timestamp+clip_t*1000)
+                time_list.append(timestamp)
+                detect.append((label,confidence,bbox))
+            detect_people_queue.put(detect, timeout =4)
+            """
+            if len(detections):
+                for label, confidence, bbox, times in detections:
+                    pedestrain_frame.put(times +clip_t*1000)
+                    time_list.append(times)
+                    detect.append((label,confidence,bbox))
+            detections_queue.put(detect)
 
 
-        fps = int(1/(time.time() - prev_time))
-        fps_queue.put(fps)
-        print("FPS: {}".format(fps))
-        darknet.print_detections(detections, args.ext_output)
+
+            fps = int(1/(time.time() - prev_time))
+            fps_queue.put(fps)
+            print("FPS: {}".format(fps))
+            darknet.print_detections(detections, args.ext_output)
     cap.release()
 
 
-def drawing(frame_queue, detections_queue, fps_queue, detect_people_queue):
+def drawing(frame_queue, detections_queue, fps_queue):
     random.seed(3)  # deterministic bbox colors
     video = set_saved_video(cap, args.out_filename, (width, height))
     while cap.isOpened():
-        frame_resized = frame_queue.get(block = True, timeout = 4)
-        detections = detections_queue.get(block = True, timeout = 4)
-        fps = fps_queue.get(block = True, timeout = 4)
-        detect_people = detect_people_queue.get(block = True, timeout = 4)
-        if frame_resized is not None:
-            #image = darknet.draw_boxes(detections, frame_resized, class_colors)
-            #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        if (not frame_queue.empty()) and (not detections_queue.empty()) and (not fps_queue.empty()):
+            frame_resized = frame_queue.get(False)
+            detections = detections_queue.get(False)
+            fps = fps_queue.get(False)
+            if frame_resized is not None:
+                image = darknet.draw_boxes(detections, frame_resized, class_colors)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            ppl_img = darknet.draw_boxes(detect_people, frame_resized, class_colors)
-            ppl_img = cv2.cvtColor(ppl_img, cv2.COLOR_BGR2RGB)
-            if args.out_filename is not None:
-               # video.write(image)
-               video.write(ppl_img)
-            if not args.dont_show:
-                cv2.imshow('Inference', ppl_img)
-            if cv2.waitKey(fps) == 27:
-                break
+                if args.out_filename is not None:
+                    video.write(image)
+                if not args.dont_show:
+                    cv2.imshow('Inference', image)
+                if cv2.waitKey(fps) == 27:
+                    break
     cap.release()
     video.release()
     cv2.destroyAllWindows()
@@ -194,7 +202,6 @@ if __name__ == '__main__':
     frame_queue = Queue()
     darknet_image_queue = Queue(maxsize=1)
     detections_queue = Queue(maxsize=1)
-    detect_people_queue = Queue(maxsize = 1)
     time_queue = Queue(maxsize=1)   
     fps_queue = Queue(maxsize=1)
     pedestrain_frame = Queue(maxsize=1)
@@ -219,8 +226,8 @@ if __name__ == '__main__':
     clip_t = args.clip_time  
 
     threads.append(Thread(target=video_capture, args=(frame_queue, darknet_image_queue,time_queue, pedestrain_frame)))
-    threads.append(Thread(target=inference, args=(darknet_image_queue, detections_queue, fps_queue, detect_people_queue, time_queue, time_list, pedestrain_frame)))
-    threads.append(Thread(target=drawing, args=(frame_queue, detections_queue, fps_queue, detect_people_queue)))
+    threads.append(Thread(target=inference, args=(darknet_image_queue, detections_queue, fps_queue, time_queue, time_list, pedestrain_frame)))
+    threads.append(Thread(target=drawing, args=(frame_queue, detections_queue, fps_queue)))
     
     while True:
         for i in threads:
