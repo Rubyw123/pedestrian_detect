@@ -128,10 +128,13 @@ def video_capture(frame_queue, darknet_image_queue,time_queue,pedestrain_frame):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_resized = cv2.resize(frame_rgb, (width, height),
                                    interpolation=cv2.INTER_LINEAR)
-        frame_queue.put(frame_resized)
+        if frame_queue.empty():
+            frame_queue.put(frame_resized, block = False)
         darknet.copy_image_from_bytes(darknet_image, frame_resized.tobytes())
-        darknet_image_queue.put(darknet_image)
-        time_queue.put(timestamp)
+        if darknet_image_queue.empty():
+            darknet_image_queue.put(darknet_image, block = False)
+        if time_queue.empty():
+            time_queue.put(timestamp)
 
         
     
@@ -161,15 +164,18 @@ def inference(darknet_image_queue, detections_queue, fps_queue, time_queue, time
             """
             if len(detections):
                 for label, confidence, bbox, times in detections:
-                    pedestrain_frame.put(times +clip_t*1000)
+                    if pedestrain_frame.empty():
+                        pedestrain_frame.put(times +clip_t*1000, block = False)
                     time_list.append(times)
                     detect.append((label,confidence,bbox))
-            detections_queue.put(detect)
+            if detections_queue.empty():
+                detections_queue.put(detect, block = False)
 
 
 
             fps = int(1/(time.time() - prev_time))
-            fps_queue.put(fps)
+            if fps_queue.empty():
+                fps_queue.put(fps,block = False)
             print("FPS: {}".format(fps))
             darknet.print_detections(detections, args.ext_output)
     cap.release()
