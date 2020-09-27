@@ -222,12 +222,15 @@ if __name__ == '__main__':
     threads.append(Thread(target=inference, args=(darknet_image_queue, detections_queue, fps_queue, detect_people_queue, time_queue, time_list, pedestrain_frame)))
     threads.append(Thread(target=drawing, args=(frame_queue, detections_queue, fps_queue, detect_people_queue)))
     
-    for i in threads:
-        try:
-            i.start()
-        except:
-            pass
-    for i in threads:
-        i.join()
-        print(i.name+" has finished!")
+    while True:
+        for i in threads:
+            try:
+                i.start()
+            except Exception as e:
+                print(e)
+                break
+        for i in threads:
+            i.join()
+            print(i.name+" has finished!")
+        break
     get_clips_time(time_list,clip_t)
