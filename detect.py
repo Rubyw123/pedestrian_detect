@@ -20,7 +20,7 @@ def parser():
                         help="inference video name. Not saved if empty")
     parser.add_argument("--weights", default="yolov4.weights",
                         help="yolo weights path")
-    parser.add_argument("--dont_show", action='store_true',
+    parser.add_argument("--dont_show", action='store_false',
                         help="windown inference display. For headless systems")
     parser.add_argument("--ext_output", action='store_true',
                         help="display bbox coordinates of detected objects")
